@@ -2,9 +2,9 @@ from datetime import datetime
 import time
 import json
 
-from tennis_club import TennisClub
+from tennis_clubs.tennis_club import TennisClub
 from tipper_scraper import TipperScraper
-from email_manager import EmailManager
+from email_management.email_manager import EmailManager
 from program_args import get_args
 
 def main():

@@ -2,19 +2,18 @@ import json
 import os
 import errno
 
-from tennis_court_session import TennisCourtSession
+from tennis_clubs.tennis_court_session import TennisCourtSession
 from tipper_scraper import TipperScraper
 from datetime import datetime, timedelta
 
 from program_args import get_args
 
 class TennisClub:
-
     def __init__(self, tennis_court_config) -> None:
         self.name = tennis_court_config['name']
         self.__id = tennis_court_config['court_id']
         self.__base_url = tennis_court_config['base_url']
-        self.__cache_path = os.path.join(os.path.dirname(__file__), "cache", f"{self.name.lower().replace(' ', '_')}.json")
+        self.__cache_path = os.path.join(os.path.dirname(__file__), '..', "cache", f"{self.name.lower().replace(' ', '_')}.json")
         self.__lookahead_days = tennis_court_config.get('lookahead_days', 14)
         self.__court_number_offset = tennis_court_config.get('court_number_offset', 0)
         self.__book_on_hour = tennis_court_config.get('book_on_hour', False)

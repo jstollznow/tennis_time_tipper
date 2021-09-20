@@ -2,7 +2,7 @@ import os
 import re
 from jinja2 import Environment, FileSystemLoader
 
-from email_sender import EmailSender, MockSender
+from email_management.email_sender import EmailSender, MockSender
 
 class EmailManager:
     EMAIL_REGEX = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'

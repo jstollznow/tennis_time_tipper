@@ -1,6 +1,6 @@
 import json
 
-from email_manager import EmailManager
+from email_management.email_manager import EmailManager
 from program_args import get_args
 
 def main():

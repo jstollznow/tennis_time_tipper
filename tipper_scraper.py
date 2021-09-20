@@ -62,5 +62,6 @@ class TipperScraper:
             response = TipperScraper.__request_session.get(url)
             resp_status_code = response.status_code
             TipperScraper.total_tries += 1
-            # time.sleep(0.1)
+            if resp_status_code == 403:
+                time.sleep(0.1)
         return response.text
