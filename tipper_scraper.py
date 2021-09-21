@@ -25,7 +25,7 @@ class TipperScraper:
         TipperScraper.__request_session = requests.session()
 
     @staticmethod
-    def get_tennis_times_for_date(schedule_url, tee_time_cut_off, min_spots, book_on_hour):
+    def get_tennis_times_for_date(schedule_url, tee_time_cut_off, session_time_validator, book_on_hour):
         tennis_times = []
         tennis_start_times = {}
         soup = BeautifulSoup(TipperScraper.__get_content(schedule_url), features="lxml")
@@ -33,6 +33,8 @@ class TipperScraper:
             tennis_court_regex = re.search(r"'(.*start=([0-9:]+).*court=([0-9]+))", row.get('href'))
             if tennis_court_regex:
                 session_start_time = datetime.combine(tee_time_cut_off.date(), datetime.strptime(tennis_court_regex.group(2), '%H:%M').time())
+                is_valid_start_time = session_time_validator.is_start_time_valid(session_start_time)
+                print(session_start_time.strftime('%c'), is_valid_start_time)
                 court_number = int(tennis_court_regex.group(3))
                 new_session_key = f"{session_start_time.strftime('%H:%M')}-{court_number}"
                 new_session = {
@@ -40,14 +42,13 @@ class TipperScraper:
                     'court': court_number,
                     'endpoint': '/' + tennis_court_regex.group(1)
                 }
-
-                if book_on_hour:
+                if book_on_hour and is_valid_start_time:
                     tennis_times.append(new_session)
                     continue
+                if is_valid_start_time:
+                    tennis_start_times[new_session_key] = new_session
 
-                tennis_start_times[new_session_key] = new_session
                 session_before_key = f"{(session_start_time - timedelta(minutes=TipperScraper.SESSION_LENGTH)).strftime('%H:%M')}-{court_number}"
-
                 if session_before_key in tennis_start_times:
                     tennis_times.append(tennis_start_times[session_before_key])
                     del tennis_start_times[session_before_key]

@@ -1,4 +1,5 @@
 from datetime import datetime
+from session_time_filter import SessionTimeFilter
 import time
 import json
 
@@ -14,10 +15,12 @@ def main():
     TipperScraper.set_scraping_details(tipper_config['xml_objects'])
 
     tennis_courts = {}
+    session_filter = SessionTimeFilter(tipper_config['valid_times'])
 
     for course_config in tipper_config['court_locations']:
-        tennis_court = TennisClub(course_config)
+        tennis_court = TennisClub(course_config, session_filter)
         tennis_courts[tennis_court.name] = tennis_court
+
 
     print('Getting new tennis times')
     print(datetime.now())

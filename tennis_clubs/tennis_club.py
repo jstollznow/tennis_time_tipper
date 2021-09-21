@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from program_args import get_args
 
 class TennisClub:
-    def __init__(self, tennis_court_config) -> None:
+    def __init__(self, tennis_court_config, session_time_filter) -> None:
         self.name = tennis_court_config['name']
         self.__id = tennis_court_config['court_id']
         self.__base_url = tennis_court_config['base_url']
@@ -19,6 +19,7 @@ class TennisClub:
         self.__book_on_hour = tennis_court_config.get('book_on_hour', False)
         self.__base_schedule_url = self.__get_url_from_endpoint(tennis_court_config['schedule_endpoint'])
         self.__tennis_session_times_by_date = {}
+        self.__session_time_filter = session_time_filter
 
         self.deserialize(self.__load_json_from_path(self.__cache_path))
 
@@ -46,7 +47,7 @@ class TennisClub:
         for latest_tee_time in self.__get_lookahead_cutoff_times():
             date_str = f'{latest_tee_time.year}-{latest_tee_time.month:02d}-{latest_tee_time.day:02d}'
 
-            session_times_data = TipperScraper.get_tennis_times_for_date(self.__base_schedule_url.format(date_str), latest_tee_time, min_spots, self.__book_on_hour)
+            session_times_data = TipperScraper.get_tennis_times_for_date(self.__base_schedule_url.format(date_str), latest_tee_time, self.__session_time_filter, self.__book_on_hour)
             if session_times_data:
                 session_times_for_day = self.__decorate_tee_time_data(session_times_data)
                 new_session_times = session_times_for_day - self.__tennis_session_times_by_date.get(latest_tee_time.date(), set())
