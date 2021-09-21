@@ -1,18 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class SessionTimeFilter:
     def __init__(self, valid_times_config) -> None:
-        # self.id = round_type_config['id']
-        # self.name = round_type_config['name']
-        # self.type = TimeOfWeek[round_type_config.get('type', 'all').lower()]
-        # self.round_fee_ids = [None for _ in range(7)]
-        # self.__initialize_booking_ids(round_type_config['round_fee_ids'])
-        # self.__base_booking_url = base_booking_url.format("{}", self.id)
-        # self.__base_add_to_cart_url = base_add_to_cart_url.format("{}", self.id, "{}")
-        # self.__tee_times_by_date = {}
-        # self.booking_ids = {}
-
         self.valid_times_by_week = self.__initialize_valid_times_by_week(valid_times_config)
+        print(self.valid_times_by_week)
 
     def is_start_time_valid(self, session_start_time):
         weekday_index = session_start_time.weekday()
@@ -49,7 +40,7 @@ class SessionTimeFilter:
                     start_time = datetime.strptime(filter_config['start'], '%I:%M%p')
                     time_filters_by_day[day_to_apply][start_time.time()] = True
                 if 'end' in filter_config:
-                    end_time = datetime.strptime(filter_config['end'], '%I:%M%p')
+                    end_time = datetime.strptime(filter_config['end'], '%I:%M%p') + timedelta(minutes=1)
                     time_filters_by_day[day_to_apply][end_time.time()] = False
 
         return [dict(sorted(time_filters_by_day[i].items())) for i in range(7)]
