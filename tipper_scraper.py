@@ -34,7 +34,6 @@ class TipperScraper:
             if tennis_court_regex:
                 session_start_time = datetime.combine(tee_time_cut_off.date(), datetime.strptime(tennis_court_regex.group(2), '%H:%M').time())
                 is_valid_start_time = session_time_validator.is_start_time_valid(session_start_time)
-                print(session_start_time.strftime('%c'), is_valid_start_time)
                 court_number = int(tennis_court_regex.group(3))
                 new_session_key = f"{session_start_time.strftime('%H:%M')}-{court_number}"
                 new_session = {

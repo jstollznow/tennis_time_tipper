@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 class SessionTimeFilter:
     def __init__(self, valid_times_config) -> None:
         self.valid_times_by_week = self.__initialize_valid_times_by_week(valid_times_config)
-        print(self.valid_times_by_week)
 
     def is_start_time_valid(self, session_start_time):
         weekday_index = session_start_time.weekday()
