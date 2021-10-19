@@ -18,9 +18,10 @@ class TennisClub:
         self.__court_number_offset = tennis_court_config.get('court_number_offset', 0)
         self.__book_on_hour = tennis_court_config.get('book_on_hour', False)
         self.__base_schedule_url = self.__get_url_from_endpoint(tennis_court_config['schedule_endpoint'])
-        self.__tennis_session_times_by_date = {}
+        self._tennis_session_times_by_date = {}
         self.__session_time_filter = session_time_filter
         self.__lookahead_period_fetcher = LookaheadMapper(tennis_court_config['lookahead_strategy'])
+        self.newest_tee_times = {}
 
         self.deserialize(self.__load_json_from_path(self.__cache_path))
 
@@ -29,35 +30,42 @@ class TennisClub:
             tennis_sessions = set()
             date = datetime.strptime(date_str, '%x').date()
             for tennis_session_data in tennis_sessions_data:
-                tennis_sessions.add(TennisCourtSession.deserialize(tennis_session_data, self.__base_url))
-            self.__tennis_session_times_by_date[date] = tennis_sessions
+                tennis_sessions.add(TennisCourtSession.deserialize(tennis_session_data))
+            self._tennis_session_times_by_date[date] = tennis_sessions
 
     def serialize(self):
         tennis_time_data = {}
-        for date, tennis_sessions in self.__tennis_session_times_by_date.items():
+        for date, tennis_sessions in self._tennis_session_times_by_date.items():
             tennis_sessions_data = []
             for tennis_session in tennis_sessions:
                 tennis_sessions_data.append(tennis_session.serialize())
             tennis_time_data[date.strftime('%x')] = tennis_sessions_data
         return tennis_time_data
 
-    def get_new_tee_times_for_period(self, min_spots):
+    def get_new_tee_times_for_period(self) -> bool:
         latest_tee_time = datetime.now()
-        new_tee_times_for_period = {}
+        self.newest_tee_times = {}
 
         for latest_tee_time in self.__lookahead_period_fetcher.get_lookahead_days():
             date_str = f'{latest_tee_time.year}-{latest_tee_time.month:02d}-{latest_tee_time.day:02d}'
-
             session_times_data = TipperScraper.get_tennis_times_for_date(self.__base_schedule_url.format(date_str), latest_tee_time, self.__session_time_filter, self.__book_on_hour)
             if session_times_data:
                 session_times_for_day = self.__decorate_tee_time_data(session_times_data)
-                new_session_times = session_times_for_day - self.__tennis_session_times_by_date.get(latest_tee_time.date(), set())
+                new_session_times = session_times_for_day - self._tennis_session_times_by_date.get(latest_tee_time.date(), set())
                 if new_session_times:
-                    new_tee_times_for_period[latest_tee_time.date()] = sorted(new_session_times, key=lambda x: x.start_time)
-                self.__tennis_session_times_by_date[latest_tee_time.date()] = session_times_for_day
+                    self.newest_tee_times[latest_tee_time.date()] = sorted(new_session_times, key=lambda x: x.start_time)
+                self._tennis_session_times_by_date[latest_tee_time.date()] = session_times_for_day
 
         self.__save_to_json_to_path(self.serialize(), self.__cache_path)
-        return new_tee_times_for_period
+
+        return self.newest_tee_times
+
+    def get_all_tee_times_sorted(self):
+        tee_times_for_period = {}
+        for date, sessions in self._tennis_session_times_by_date.items():
+            tee_times_for_period[date] = sorted(sessions, key=lambda x: x.start_time)
+
+        return tee_times_for_period
 
     def __decorate_tee_time_data(self, tee_times_data):
         tee_time_groups = set()

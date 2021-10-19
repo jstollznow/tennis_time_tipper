@@ -1,8 +1,8 @@
 <html>
     <body>
         Hi lucky recipient,<br><br>
-        The following new tennis session times are now available:<br><br>
-        {% for court_name, tennis_sessions_by_date in tennis_sessions_by_location.items() %}
+        <h1>New tennis sessions</h1>
+        {% for court_name, tennis_sessions_by_date in new_tennis_sessions.items() %}
         <h2>{{court_name}}</h2>
         <table>
             {% for date, tennis_sessions in tennis_sessions_by_date.items() %}
@@ -24,8 +24,32 @@
         </table>
         {% endfor %}
 
+        {% if send_all %}
+        <h1>All current tennis sessions</h1>
+        {% for court_name, tennis_sessions_by_date in all_tennis_sessions.items() %}
+        <h2>{{court_name}}</h2>
+        <table>
+            {% for date, tennis_sessions in tennis_sessions_by_date.items() %}
+            <tr>
+                <td>
+                    <b>{{date.strftime('%A %d/%m/%Y')}}</b>
+                </td>
+            </tr>
+            {% for tennis_session in tennis_sessions %}
+            <tr>
+                <td></td>
+                <td>
+                    <a href={{tennis_session.booking_url}}>{{tennis_session.get_time_str()}}</a>
+                </td>
+                <td>Court {{tennis_session.court_number}}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </table>
+        {% endfor %}
+        {% endif %}
         Thanks, <br>
-        Tee Time Tipper.
+        Tennis Time Tipper.
         </p>
     </body>
 </html>

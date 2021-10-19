@@ -7,8 +7,8 @@ class TennisCourtSession:
         self.booking_url = booking_url
 
     @staticmethod
-    def deserialize(serialized_data, base_url):
-        return TennisCourtSession(datetime.strptime(serialized_data[0], '%c'), serialized_data[1], base_url + serialized_data[2])
+    def deserialize(serialized_data):
+        return TennisCourtSession(datetime.strptime(serialized_data[0], '%c'), serialized_data[1], serialized_data[2])
 
     def serialize(self):
         return [self.start_time.strftime('%c'), self.court_number, self.booking_url]
