@@ -1,10 +1,11 @@
 import json
 import os
 import errno
+from datetime import datetime
 
 from tennis_clubs.tennis_court_session import TennisCourtSession
+from tennis_clubs.lookahead_mapper import LookaheadMapper
 from tipper_scraper import TipperScraper
-from datetime import datetime, timedelta
 
 from program_args import get_args
 
@@ -14,12 +15,12 @@ class TennisClub:
         self.__id = tennis_court_config['court_id']
         self.__base_url = tennis_court_config['base_url']
         self.__cache_path = os.path.join(os.path.dirname(__file__), '..', "cache", f"{self.name.lower().replace(' ', '_')}.json")
-        self.__lookahead_days = tennis_court_config.get('lookahead_days', 14)
         self.__court_number_offset = tennis_court_config.get('court_number_offset', 0)
         self.__book_on_hour = tennis_court_config.get('book_on_hour', False)
         self.__base_schedule_url = self.__get_url_from_endpoint(tennis_court_config['schedule_endpoint'])
         self.__tennis_session_times_by_date = {}
         self.__session_time_filter = session_time_filter
+        self.__lookahead_period_fetcher = LookaheadMapper(tennis_court_config['lookahead_strategy'])
 
         self.deserialize(self.__load_json_from_path(self.__cache_path))
 
@@ -44,7 +45,7 @@ class TennisClub:
         latest_tee_time = datetime.now()
         new_tee_times_for_period = {}
 
-        for latest_tee_time in self.__get_lookahead_cutoff_times():
+        for latest_tee_time in self.__lookahead_period_fetcher.get_lookahead_days():
             date_str = f'{latest_tee_time.year}-{latest_tee_time.month:02d}-{latest_tee_time.day:02d}'
 
             session_times_data = TipperScraper.get_tennis_times_for_date(self.__base_schedule_url.format(date_str), latest_tee_time, self.__session_time_filter, self.__book_on_hour)
@@ -63,15 +64,6 @@ class TennisClub:
         for tee_time_data in tee_times_data:
             tee_time_groups.add(TennisCourtSession(tee_time_data['start_time'], tee_time_data['court'] - self.__court_number_offset, self.__base_url + tee_time_data['endpoint']))
         return tee_time_groups
-
-    def __get_lookahead_cutoff_times(self):
-        cutoff_times = []
-        latest_tee_time = datetime.now()
-
-        for _ in range(self.__lookahead_days):
-            latest_tee_time += timedelta(1)
-            cutoff_times.append(datetime.combine(latest_tee_time.date(), datetime.now().time()))
-        return cutoff_times
 
     def __get_url_from_endpoint(self, schedule_endpoint):
         return self.__base_url + schedule_endpoint.format(self.__id, "{}")

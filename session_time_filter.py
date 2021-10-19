@@ -1,3 +1,4 @@
+from typing import List
 from datetime import datetime, timedelta
 
 class SessionTimeFilter:
@@ -10,26 +11,25 @@ class SessionTimeFilter:
         if not changing_time_keys:
             return True
 
-        time_key = self.__binary_search(changing_time_keys, session_start_time.time() , 0, len(changing_time_keys) - 1)
+        i = self._binary_search(changing_time_keys, session_start_time.time())
 
-        if time_key == -1:
+        if i == -1:
             first_key = changing_time_keys[0]
             return not self.valid_times_by_week[weekday_index][first_key]
         else:
-            return self.valid_times_by_week[weekday_index][time_key]
+            return self.valid_times_by_week[weekday_index][changing_time_keys[i]]
 
-    def __binary_search(self, values, target, left, right):
-        if left > right:
-            if left == 0:
-                return -1
-            return values[right]
-        mid = int(left + (right - left) / 2)
-        if target > values[mid]:
-            return self.__binary_search(values, target, mid + 1, right)
-        elif target < values[mid]:
-            return self.__binary_search(values, target, left, mid - 1)
-        else:
-            return values[mid]
+    def _binary_search(self, arr: List[int], x: int) -> int:
+        left, right = 0, len(arr) - 1
+        while left <= right:
+            mid = left + (right - left) // 2
+            if x > arr[mid]:
+                left = mid + 1
+            elif x < arr[mid]:
+                right = mid - 1
+            else:
+                return mid
+        return right
 
     def __initialize_valid_times_by_week(self, time_filter_configs):
         time_filters_by_day = [{} for _ in range(7)]
@@ -44,7 +44,7 @@ class SessionTimeFilter:
 
         return [dict(sorted(time_filters_by_day[i].items())) for i in range(7)]
 
-    def __get_applicable_days(self, time_of_week):
+    def __get_applicable_days(self, time_of_week: str) -> List[int]:
         if time_of_week == 'all':
             return [i for i in range(7)]
         elif time_of_week == 'weekend':
