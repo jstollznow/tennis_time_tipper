@@ -32,9 +32,10 @@ def main():
 
     for tennis_court in tennis_courts.values():
         print(f'{tennis_court.name}')
-        if tennis_court.get_new_tee_times_for_period():
+        newest_tee_times = tennis_court.get_new_tee_times_for_period()
+        if newest_tee_times:
             print(f'New times at {tennis_court.name}')
-            new_tennis_times_by_location[tennis_court.name] = tennis_court.newest_tee_times
+            new_tennis_times_by_location[tennis_court.name] = newest_tee_times
         if should_send_all:
             all_tennis_times = tennis_court.get_all_tee_times_sorted()
             if all_tennis_times:
@@ -49,7 +50,7 @@ def main():
 
     t1 = time.time()
     print(f'Scrape took {t1-t0} seconds')
-    print(TipperScraper.total_tries)
+    print(TipperScraper._total_tries)
     print()
 
 main()
