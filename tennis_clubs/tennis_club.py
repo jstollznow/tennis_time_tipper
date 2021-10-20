@@ -19,8 +19,10 @@ class TennisClub:
         self._cache_path: str = os.path.join(os.path.dirname(__file__), '..', "cache", f"{self.name.lower().replace(' ', '_')}.json")
         self._court_number_offset: int = cast(int, tennis_court_config.get('court_number_offset', 0))
         self._book_on_hour: bool = cast(bool, tennis_court_config.get('book_on_hour', False))
+        self._notify_on_new: bool = cast(bool, tennis_court_config.get('notify_on_new', False))
         self._base_schedule_url: str = self._get_url_from_endpoint(cast(str, tennis_court_config['schedule_endpoint']))
-        self._tennis_session_times_by_date: Dict[date, Set[TennisCourtSession]] = {}
+        self._current_sessions_by_date: Dict[date, Set[TennisCourtSession]] = {}
+        self._newest_sessions_by_date: Dict[date, Set[TennisCourtSession]] = {}
         self._session_time_filter: SessionTimeFilter = session_time_filter
         self._lookahead_period_fetcher: LookaheadMapper = LookaheadMapper(cast(Dict[str, Union[str, int]], tennis_court_config['lookahead_strategy']))
 
@@ -32,41 +34,47 @@ class TennisClub:
             tennis_date: date = datetime.strptime(date_str, '%x').date()
             for tennis_session_data in tennis_sessions_data:
                 tennis_sessions.add(TennisCourtSession.deserialize(tennis_session_data))
-            self._tennis_session_times_by_date[tennis_date] = tennis_sessions
+            self._current_sessions_by_date[tennis_date] = tennis_sessions
 
     def serialize(self) -> Dict[str, List[List[Union[str, int]]]]:
         tennis_time_data: Dict[str, List[List[Union[str, int]]]] = {}
-        for date, tennis_sessions in self._tennis_session_times_by_date.items():
+        for date, tennis_sessions in self._current_sessions_by_date.items():
             tennis_sessions_data: List[List[Union[str, int]]] = []
             for tennis_session in tennis_sessions:
                 tennis_sessions_data.append(tennis_session.serialize())
             tennis_time_data[date.strftime('%x')] = tennis_sessions_data
         return tennis_time_data
 
-    def get_new_tee_times_for_period(self) -> Dict[date, List[TennisCourtSession]]:
+    def fetch_newest_tennis_times(self) -> bool:
         latest_tee_time: datetime = datetime.now()
-        newest_tee_times: Dict[date, List[TennisCourtSession]] = {}
-
+        self._newest_sessions_by_date = {}
         for latest_tee_time in self._lookahead_period_fetcher.get_lookahead_days():
             date_str: str = f'{latest_tee_time.year}-{latest_tee_time.month:02d}-{latest_tee_time.day:02d}'
             session_times_data: List[Dict[str, Union[str, int, datetime]]] = TipperScraper.get_tennis_times_for_date(self._base_schedule_url.format(date_str), latest_tee_time, self._session_time_filter, self._book_on_hour)
             if session_times_data:
                 session_times_for_day: Set[TennisCourtSession] = self._decorate_tee_time_data(session_times_data)
-                new_session_times: Set[TennisCourtSession] = session_times_for_day - self._tennis_session_times_by_date.get(latest_tee_time.date(), set())
+                new_session_times: Set[TennisCourtSession] = session_times_for_day - self._current_sessions_by_date.get(latest_tee_time.date(), set())
                 if new_session_times:
-                    newest_tee_times[latest_tee_time.date()] = sorted(new_session_times, key=lambda x: x.start_time)
-                self._tennis_session_times_by_date[latest_tee_time.date()] = session_times_for_day
+                    self._newest_sessions_by_date[latest_tee_time.date()] = new_session_times
+                self._current_sessions_by_date[latest_tee_time.date()] = session_times_for_day
 
         self._save_to_json_to_path(self.serialize(), self._cache_path)
 
-        return newest_tee_times
+        return len(self._newest_sessions_by_date) > 0 and self._notify_on_new
 
-    def get_all_tee_times_sorted(self) -> Dict[date, List[TennisCourtSession]]:
-        tee_times_for_period: Dict[date, List[TennisCourtSession]] = {}
-        for tennis_date, sessions in self._tennis_session_times_by_date.items():
-            tee_times_for_period[tennis_date] = sorted(sessions, key=lambda x: x.start_time)
+    def get_all_tennis_times_sorted(self) -> Dict[date, List[TennisCourtSession]]:
+        tennis_times_sorted: Dict[date, List[TennisCourtSession]] = {}
+        for tennis_date, sessions in self._current_sessions_by_date.items():
+            tennis_times_sorted[tennis_date] = sorted(sessions, key=lambda x: x.start_time)
 
-        return tee_times_for_period
+        return tennis_times_sorted
+
+    def get_newest_tennis_sessions_sorted(self) -> Dict[date, List[TennisCourtSession]]:
+        newest_times_sorted: Dict[date, List[TennisCourtSession]] = {}
+        for tennis_date, sessions in self._newest_sessions_by_date.items():
+            newest_times_sorted[tennis_date] = sorted(sessions, key=lambda x: x.start_time)
+
+        return newest_times_sorted
 
     def _decorate_tee_time_data(self, tee_times_data: List[Dict[str, Union[str, int, datetime]]]) -> Set[TennisCourtSession]:
         tee_time_groups: Set[TennisCourtSession] = set()

@@ -32,12 +32,11 @@ def main():
 
     for tennis_court in tennis_courts.values():
         print(f'{tennis_court.name}')
-        newest_tee_times = tennis_court.get_new_tee_times_for_period()
-        if newest_tee_times:
+        if tennis_court.fetch_newest_tennis_times():
             print(f'New times at {tennis_court.name}')
-            new_tennis_times_by_location[tennis_court.name] = newest_tee_times
+            new_tennis_times_by_location[tennis_court.name] = tennis_court.get_newest_tennis_sessions_sorted()
         if should_send_all:
-            all_tennis_times = tennis_court.get_all_tee_times_sorted()
+            all_tennis_times = tennis_court.get_all_tennis_times_sorted()
             if all_tennis_times:
                 current_tennis_times_by_location[tennis_court.name] = all_tennis_times
 
