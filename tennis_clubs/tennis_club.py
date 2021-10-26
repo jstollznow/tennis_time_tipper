@@ -30,8 +30,11 @@ class TennisClub:
 
     def deserialize(self, tennis_time_data: Dict[str, List[List[Union[str, int]]]]) -> None:
         for date_str, tennis_sessions_data in tennis_time_data.items():
-            tennis_sessions: Set[TennisCourtSession] = set()
             tennis_date: date = datetime.strptime(date_str, '%x').date()
+            if tennis_date < datetime.now().date():
+                continue
+
+            tennis_sessions: Set[TennisCourtSession] = set()
             for tennis_session_data in tennis_sessions_data:
                 tennis_sessions.add(TennisCourtSession.deserialize(tennis_session_data))
             self._current_sessions_by_date[tennis_date] = tennis_sessions
