@@ -2,13 +2,13 @@
     <body>
         Hi lucky recipient,<br><br>
         <h1>New tennis sessions</h1>
-        {% for court_name, tennis_sessions_by_date in new_tennis_sessions.items() %}
+        {% for court_name in new_tennis_sessions %}
         <h2>{{court_name}}</h2>
         <table>
-            {% for date, tennis_sessions in tennis_sessions_by_date.items() %}
+            {% for date, tennis_sessions in tennis_courts[court_name].get_newest_tennis_sessions_sorted().items() %}
             <tr>
                 <td>
-                    <b>{{date.strftime('%A %d/%m/%Y')}}</b>
+                    <b><a href={{tennis_courts[court_name].get_schedule_url(date)}}>{{date.strftime('%A %d/%m/%Y')}}</a></b>
                 </td>
             </tr>
             {% for tennis_session in tennis_sessions %}
@@ -26,13 +26,13 @@
 
         {% if send_all %}
         <h1>All current tennis sessions</h1>
-        {% for court_name, tennis_sessions_by_date in all_tennis_sessions.items() %}
+        {% for court_name, tennis_court in tennis_courts.items() %}
         <h2>{{court_name}}</h2>
         <table>
-            {% for date, tennis_sessions in tennis_sessions_by_date.items() %}
+            {% for date, tennis_sessions in tennis_court.get_all_tennis_times_sorted().items() %}
             <tr>
                 <td>
-                    <b>{{date.strftime('%A %d/%m/%Y')}}</b>
+                    <b><a href={{tennis_court.get_schedule_url(date)}}>{{date.strftime('%A %d/%m/%Y')}}</a></b>
                 </td>
             </tr>
             {% for tennis_session in tennis_sessions %}

@@ -52,7 +52,7 @@ class TennisClub:
         latest_tee_time: datetime = datetime.now()
         self._newest_sessions_by_date = {}
         for latest_tee_time in self._lookahead_period_fetcher.get_lookahead_days():
-            date_str: str = f'{latest_tee_time.year}-{latest_tee_time.month:02d}-{latest_tee_time.day:02d}'
+            date_str: str = self._get_date_str(latest_tee_time)
             session_times_data: List[Dict[str, Union[str, int, datetime]]] = TipperScraper.get_tennis_times_for_date(self._base_schedule_url.format(date_str), latest_tee_time, self._session_time_filter, self._book_on_hour)
             if session_times_data:
                 session_times_for_day: Set[TennisCourtSession] = self._decorate_tee_time_data(session_times_data)
@@ -79,6 +79,9 @@ class TennisClub:
 
         return newest_times_sorted
 
+    def get_schedule_url(self, booking_date: date) -> str:
+        return self._base_schedule_url.format(self._get_date_str(booking_date))
+
     def _decorate_tee_time_data(self, tee_times_data: List[Dict[str, Union[str, int, datetime]]]) -> Set[TennisCourtSession]:
         tee_time_groups: Set[TennisCourtSession] = set()
         for tee_time_data in tee_times_data:
@@ -87,6 +90,9 @@ class TennisClub:
 
     def _get_url_from_endpoint(self, schedule_endpoint: str) -> str:
         return self._base_url + schedule_endpoint.format(self._id, "{}")
+
+    def _get_date_str(self, date: date) -> str:
+        return f'{date.year}-{date.month:02d}-{date.day:02d}'
 
     def _load_json_from_path(self, file_path: str) -> Any:
         if not os.path.exists(file_path) \
