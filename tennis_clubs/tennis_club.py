@@ -54,12 +54,18 @@ class TennisClub:
         for latest_tee_time in self._lookahead_period_fetcher.get_lookahead_days():
             date_str: str = self._get_date_str(latest_tee_time)
             session_times_data: List[Dict[str, Union[str, int, datetime]]] = TipperScraper.get_tennis_times_for_date(self._base_schedule_url.format(date_str), latest_tee_time, self._session_time_filter, self._book_on_hour)
-            if session_times_data:
-                session_times_for_day: Set[TennisCourtSession] = self._decorate_tee_time_data(session_times_data)
-                new_session_times: Set[TennisCourtSession] = session_times_for_day - self._current_sessions_by_date.get(latest_tee_time.date(), set())
-                if new_session_times:
-                    self._newest_sessions_by_date[latest_tee_time.date()] = new_session_times
-                self._current_sessions_by_date[latest_tee_time.date()] = session_times_for_day
+
+            session_times_for_day: Set[TennisCourtSession] = self._decorate_tee_time_data(session_times_data)
+            new_session_times: Set[TennisCourtSession] = session_times_for_day - self._current_sessions_by_date.get(latest_tee_time.date(), set())
+            self._current_sessions_by_date[latest_tee_time.date()] = session_times_for_day
+
+            if new_session_times:
+                self._newest_sessions_by_date[latest_tee_time.date()] = new_session_times
+
+            if not session_times_for_day:
+                del self._current_sessions_by_date[latest_tee_time.date()]
+
+
 
         self._save_to_json_to_path(self.serialize(), self._cache_path)
 
